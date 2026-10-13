@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Calculadora de IMC</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f4f1ff;
+    --card: #ffffff;
+    --ink: #1d1a3d;
+    --muted: #6b6891;
+    --line: #e3def7;
+    --accent: #5b3df5;
+    --accent-dark: #4325d6;
+    --error: #d6264f;
+
+    --c1: #38bdf8;
+    --c2: #22c55e;
+    --c3: #facc15;
+    --c4: #fb923c;
+    --c5: #f43f5e;
+    --c6: #9333ea;
+
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  :root:not([data-theme="light"]) {}
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14112e;
+      --card: #1f1b45;
+      --ink: #f1eeff;
+      --muted: #a8a3d6;
+      --line: #342f66;
+      --accent: #8f7bff;
+      --accent-dark: #a594ff;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #14112e;
+    --card: #1f1b45;
+    --ink: #f1eeff;
+    --muted: #a8a3d6;
+    --line: #342f66;
+    --accent: #8f7bff;
+    --accent-dark: #a594ff;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; }
+  html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+  body {
+    margin: 0;
+    min-height: 100%;
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Bricolage Grotesque", system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px 16px;
+  }
+
+  .app {
+    width: 100%;
+    max-width: 640px;
+  }
+
+  .brand {
+    font-weight: 800;
+    font-size: 1rem;
+    letter-spacing: -0.01em;
+    color: var(--muted);
+    margin: 0 0 16px 4px;
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 28px;
+    padding: 36px 32px 32px;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 20px 50px -25px rgba(67, 37, 214, .35);
+  }
+
+  /* barra de progresso das etapas */
+  .progress {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 32px;
+  }
+  .progress span {
+    flex: 1;
+    height: 6px;
+    border-radius: 6px;
+    background: var(--line);
+    transition: background .4s;
+  }
+  .progress span.on { background: var(--accent); }
+
+  .step { display: none; }
+  .step.active { display: block; animation: enter .45s cubic-bezier(.2,.8,.2,1); }
+  .step.leaving { display: block; animation: leave .25s ease-in forwards; }
+  @keyframes enter { from { opacity: 0; transform: translateX(40px); } to { opacity: 1; transform: none; } }
+  @keyframes leave { to { opacity: 0; transform: translateX(-40px); } }
+  .step.back.active { animation-name: enterBack; }
+  @keyframes enterBack { from { opacity: 0; transform: translateX(-40px); } to { opacity: 1; transform: none; } }
+
+  h1, h2 {
+    margin: 0 0 8px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    line-height: 1.05;
+    font-size: clamp(2rem, 7vw, 2.8rem);
+  }
+  .sub { margin: 0 0 28px; color: var(--muted); font-size: 1.05rem; }
+
+  .field {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    border-bottom: 3px solid var(--line);
+    padding-bottom: 6px;
+    transition: border-color .2s;
+  }
+  .field:focus-within { border-color: var(--accent); }
+  .field.invalid { border-color: var(--error); }
+  .field input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: var(--ink);
+    font: 800 clamp(3rem, 15vw, 5rem)/1 "Bricolage Grotesque", system-ui, sans-serif;
+    letter-spacing: -0.04em;
+    padding: 0;
+  }
+  .field input::placeholder { color: var(--line); }
+  .field .unit { font-size: 1.6rem; font-weight: 600; color: var(--muted); }
+
+  .error {
+    color: var(--error);
+    min-height: 1.4em;
+    margin: 10px 0 0;
+    font-size: .95rem;
+    font-weight: 600;
+  }
+
+  .actions { display: flex; gap: 12px; margin-top: 24px; }
+  button {
+    font: 600 1.1rem "Bricolage Grotesque", system-ui, sans-serif;
+    border: 0;
+    border-radius: 16px;
+    padding: 16px 26px;
+    cursor: pointer;
+    transition: transform .15s, background .2s;
+  }
+  button:focus-visible, input:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+  .primary { background: var(--accent); color: #fff; flex: 1; }
+  .primary:hover { background: var(--accent-dark); }
+  .primary:active { transform: scale(.98); }
+  .ghost { background: transparent; color: var(--muted); border: 2px solid var(--line); }
+  .ghost:hover { color: var(--ink); border-color: var(--muted); }
+  :root[data-theme="dark"] .primary, :root:not([data-theme="light"]) .primary { color: #14112e; }
+  @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .primary { color: #fff; } }
+
+  /* ---------- resultado ---------- */
+  .result-top { text-align: center; margin-bottom: 8px; }
+  .result-label { color: var(--muted); font-weight: 600; margin: 0; }
+  .result-number {
+    font-size: clamp(4.5rem, 22vw, 7.5rem);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.05em;
+    margin: 4px 0 6px;
+    color: var(--cat, var(--ink));
+  }
+  .result-cat {
+    display: inline-block;
+    font-weight: 800;
+    font-size: 1.35rem;
+    padding: 8px 20px;
+    border-radius: 999px;
+    background: var(--cat);
+    color: var(--cat-ink, #1d1a3d);
+  }
+  .result-desc { margin: 18px auto 0; max-width: 46ch; color: var(--muted); font-size: 1.05rem; line-height: 1.5; }
+
+  /* linha do tempo */
+  .timeline-wrap { margin: 44px 0 8px; padding: 0 28px; }
+  .track { position: relative; height: 22px; }
+  .bar { display: flex; gap: 3px; height: 100%; }
+  .seg { height: 100%; }
+  .seg:first-child { border-radius: 22px 6px 6px 22px; }
+  .seg:last-child { border-radius: 6px 22px 22px 6px; }
+
+  .ball {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 60px;
+    height: 60px;
+    margin: -30px 0 0 -30px;
+    border-radius: 50%;
+    background: var(--card);
+    border: 6px solid var(--cat);
+    display: grid;
+    place-items: center;
+    font-weight: 800;
+    font-size: 1.05rem;
+    letter-spacing: -0.03em;
+    color: var(--ink);
+    box-shadow: 0 8px 20px -6px rgba(0,0,0,.45);
+    transition: left 1.3s cubic-bezier(.22,1,.36,1);
+    z-index: 2;
+  }
+
+  .ticks { position: relative; height: 22px; margin-top: 22px; }
+  .ticks span {
+    position: absolute;
+    transform: translateX(-50%);
+    font-size: .85rem;
+    font-weight: 600;
+    color: var(--muted);
+  }
+
+  .legend {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+    gap: 10px 16px;
+    margin: 26px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+  .legend li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: .95rem;
+    padding: 8px 12px;
+    border-radius: 12px;
+    border: 2px solid transparent;
+  }
+  .legend li.current { border-color: var(--cat); font-weight: 800; }
+  .legend i { width: 14px; height: 14px; border-radius: 50%; flex: none; }
+  .legend small { color: var(--muted); margin-left: auto; font-weight: 600; }
+
+  .details {
+    display: flex;
+    justify-content: center;
+    gap: 28px;
+    margin-top: 26px;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .details b { color: var(--ink); }
+
+  .note { font-size: .8rem; color: var(--muted); text-align: center; margin: 22px 0 0; }
+
+  @media (max-width: 480px) {
+    .card { padding: 28px 20px 24px; border-radius: 22px; }
+    .timeline-wrap { padding: 0 24px; }
+    .actions { flex-direction: column-reverse; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .step.active, .step.leaving, .step.back.active { animation: none; }
+    .ball { transition: none; }
+  }
+</style>
+</head>
+<body>
+<main class="app">
+  <p class="brand">Calculadora de IMC</p>
+
+  <div class="card">
+    <div class="progress" aria-hidden="true"><span class="on"></span><span></span><span></span></div>
+
+    <!-- Etapa 1: peso -->
+    <section class="step active" id="step-peso">
+      <h1>Qual é o seu peso?</h1>
+      <p class="sub">Digite em quilos. Pode usar vírgula.</p>
+      <div class="field" id="field-peso">
+        <input id="peso" type="text" inputmode="decimal" placeholder="70" autocomplete="off" aria-label="Peso em quilos">
+        <span class="unit">kg</span>
+      </div>
+      <p class="error" id="erro-peso" role="alert"></p>
+      <div class="actions">
+        <button class="primary" id="btn-peso">Continuar</button>
+      </div>
+    </section>
+
+    <!-- Etapa 2: altura -->
+    <section class="step" id="step-altura">
+      <h1>E a sua altura?</h1>
+      <p class="sub">Digite em centímetros. Exemplo: 170.</p>
+      <div class="field" id="field-altura">
+        <input id="altura" type="text" inputmode="decimal" placeholder="170" autocomplete="off" aria-label="Altura em centímetros">
+        <span class="unit">cm</span>
+      </div>
+      <p class="error" id="erro-altura" role="alert"></p>
+      <div class="actions">
+        <button class="ghost" id="voltar-altura">Voltar</button>
+        <button class="primary" id="btn-altura">Ver meu resultado</button>
+      </div>
+    </section>
+
+    <!-- Etapa 3: resultado -->
+    <section class="step" id="step-resultado">
+      <div class="result-top">
+        <p class="result-label">Seu IMC é</p>
+        <div class="result-number" id="res-num">0</div>
+        <span class="result-cat" id="res-cat"></span>
+        <p class="result-desc" id="res-desc"></p>
+      </div>
+
+      <div class="timeline-wrap">
+        <div class="track">
+          <div class="bar" id="bar"></div>
+          <div class="ball" id="ball"><span id="ball-val">0</span></div>
+        </div>
+        <div class="ticks" id="ticks"></div>
+      </div>
+
+      <ul class="legend" id="legend"></ul>
+
+      <div class="details">
+        <span>Peso: <b id="det-peso"></b></span>
+        <span>Altura: <b id="det-altura"></b></span>
+      </div>
+
+      <div class="actions">
+        <button class="ghost" id="voltar-resultado">Editar dados</button>
+        <button class="primary" id="refazer">Calcular de novo</button>
+      </div>
+      <p class="note">O IMC é uma referência geral e não substitui a avaliação de um profissional de saúde.</p>
+      <p class="note">Valores podem não ser precisos para pessoas com muita massa muscular</p>
+    </section>
+  </div>
+</main>
+
+<script>
+(function () {
+  var MIN = 15, MAX = 45;
+  var categorias = [
+    { nome: "Abaixo do peso", de: 15,   ate: 18.5, cor: "#38bdf8", ink: "#0b3350", faixa: "< 18,5",
+      desc: "Seu IMC está abaixo da faixa considerada saudável. Vale conversar com um profissional de saúde sobre alimentação e hábitos." },
+    { nome: "Peso normal",    de: 18.5, ate: 25,   cor: "#22c55e", ink: "#06361a", faixa: "18,5 a 24,9",
+      desc: "Seu IMC está dentro da faixa considerada saudável. Continue cuidando da alimentação e mantendo-se ativo." },
+    { nome: "Sobrepeso",      de: 25,   ate: 30,   cor: "#facc15", ink: "#3d3000", faixa: "25 a 29,9",
+      desc: "Seu IMC está um pouco acima da faixa saudável. Pequenas mudanças na rotina podem ajudar bastante." },
+    { nome: "Obesidade grau I",   de: 30, ate: 35, cor: "#fb923c", ink: "#4a1f00", faixa: "30 a 34,9",
+      desc: "Seu IMC indica obesidade de grau I. Uma consulta com um profissional de saúde ajuda a montar um plano seguro." },
+    { nome: "Obesidade grau II",  de: 35, ate: 40, cor: "#f43f5e", ink: "#ffffff", faixa: "35 a 39,9",
+      desc: "Seu IMC indica obesidade de grau II. Recomenda-se acompanhamento com um profissional de saúde." },
+    { nome: "Obesidade grau III", de: 40, ate: 45, cor: "#9333ea", ink: "#ffffff", faixa: "≥ 40",
+      desc: "Seu IMC indica obesidade de grau III. Procure acompanhamento médico para cuidar da sua saúde." }
+  ];
+
+  var steps = { peso: el("step-peso"), altura: el("step-altura"), resultado: el("step-resultado") };
+  var order = ["peso", "altura", "resultado"];
+  var current = "peso";
+  var dados = { peso: null, altura: null };
+  var timer;
+
+  function el(id) { return document.getElementById(id); }
+  function num(txt) { return parseFloat(String(txt).trim().replace(",", ".")); }
+  function fmt(n, d) { return n.toFixed(d).replace(".", ","); }
+
+  function go(to) {
+    var from = steps[current];
+    var back = order.indexOf(to) < order.indexOf(current);
+    current = to;
+    from.classList.remove("active");
+    from.classList.add("leaving");
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      from.classList.remove("leaving");
+      var next = steps[to];
+      next.classList.toggle("back", back);
+      next.classList.add("active");
+      var spans = document.querySelectorAll(".progress span");
+      spans.forEach(function (s, i) { s.classList.toggle("on", i <= order.indexOf(to)); });
+      if (to === "peso") el("peso").focus();
+      if (to === "altura") el("altura").focus();
+      if (to === "resultado") mostrarResultado();
+    }, 240);
+  }
+
+  function erro(campo, msg) {
+    el("erro-" + campo).textContent = msg || "";
+    el("field-" + campo).classList.toggle("invalid", !!msg);
+  }
+
+  function continuarPeso() {
+    var v = num(el("peso").value);
+    if (!el("peso").value.trim()) return erro("peso", "Digite o seu peso para continuar.");
+    if (isNaN(v) || v < 20 || v > 400) return erro("peso", "Digite um peso entre 20 e 400 kg.");
+    erro("peso", "");
+    dados.peso = v;
+    go("altura");
+  }
+
+  function continuarAltura() {
+    var raw = el("altura").value.trim();
+    var v = num(raw);
+    if (!raw) return erro("altura", "Digite a sua altura para continuar.");
+    if (isNaN(v)) return erro("altura", "Digite apenas números. Exemplo: 170.");
+    // aceita 1,70 (metros) ou 170 (cm)
+    if (v < 3) v = v * 100;
+    if (v < 80 || v > 250) return erro("altura", "Digite uma altura entre 80 e 250 cm.");
+    erro("altura", "");
+    dados.altura = v;
+    go("resultado");
+  }
+
+  function categoriaDe(imc) {
+    for (var i = 0; i < categorias.length - 1; i++) if (imc < categorias[i].ate) return i;
+    return categorias.length - 1;
+  }
+
+  function montarLinha() {
+    var bar = el("bar"), ticks = el("ticks"), legend = el("legend");
+    bar.innerHTML = ""; ticks.innerHTML = ""; legend.innerHTML = "";
+    var total = MAX - MIN;
+    categorias.forEach(function (c) {
+      var s = document.createElement("div");
+      s.className = "seg";
+      s.style.flex = (c.ate - c.de) / total;
+      s.style.background = c.cor;
+      bar.appendChild(s);
+
+      var li = document.createElement("li");
+      li.innerHTML = '<i style="background:' + c.cor + '"></i>' + c.nome + "<small>" + c.faixa + "</small>";
+      legend.appendChild(li);
+    });
+    [18.5, 25, 30, 35, 40].forEach(function (t) {
+      var sp = document.createElement("span");
+      sp.textContent = fmt(t, t % 1 ? 1 : 0);
+      sp.style.left = ((t - MIN) / total * 100) + "%";
+      ticks.appendChild(sp);
+    });
+  }
+
+  function mostrarResultado() {
+    var h = dados.altura / 100;
+    var imc = dados.peso / (h * h);
+    var idx = categoriaDe(imc);
+    var cat = categorias[idx];
+
+    var root = steps.resultado;
+    root.style.setProperty("--cat", cat.cor);
+    root.style.setProperty("--cat-ink", cat.ink);
+
+    el("res-cat").textContent = cat.nome;
+    el("res-desc").textContent = cat.desc;
+    el("det-peso").textContent = fmt(dados.peso, dados.peso % 1 ? 1 : 0) + " kg";
+    el("det-altura").textContent = fmt(dados.altura, dados.altura % 1 ? 1 : 0) + " cm";
+
+    montarLinha();
+    el("legend").children[idx].classList.add("current");
+    el("legend").children[idx].style.setProperty("--cat", cat.cor);
+
+    // número que sobe
+    var alvo = imc, inicio = performance.now(), dur = 1100;
+    var reduzir = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    var numEl = el("res-num"), ballVal = el("ball-val");
+    function tick(now) {
+      var p = reduzir ? 1 : Math.min((now - inicio) / dur, 1);
+      var e = 1 - Math.pow(1 - p, 3);
+      var val = alvo * e;
+      numEl.textContent = fmt(val, 1);
+      ballVal.textContent = fmt(val, 1);
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+
+    // bolinha na linha do tempo
+    var ball = el("ball");
+    ball.style.transition = "none";
+    ball.style.left = "0%";
+    void ball.offsetWidth;
+    ball.style.transition = "";
+    var pos = Math.max(0, Math.min(1, (imc - MIN) / (MAX - MIN))) * 100;
+    requestAnimationFrame(function () { ball.style.left = pos + "%"; });
+  }
+
+  // eventos
+  el("btn-peso").addEventListener("click", continuarPeso);
+  el("btn-altura").addEventListener("click", continuarAltura);
+  el("voltar-altura").addEventListener("click", function () { go("peso"); });
+  el("voltar-resultado").addEventListener("click", function () { go("peso"); });
+  el("refazer").addEventListener("click", function () {
+    el("peso").value = ""; el("altura").value = "";
+    erro("peso", ""); erro("altura", "");
+    go("peso");
+  });
+  el("peso").addEventListener("keydown", function (e) { if (e.key === "Enter") continuarPeso(); });
+  el("altura").addEventListener("keydown", function (e) { if (e.key === "Enter") continuarAltura(); });
+  el("peso").addEventListener("input", function () { erro("peso", ""); });
+  el("altura").addEventListener("input", function () { erro("altura", ""); });
+
+  el("peso").focus();
+})();
+</script>
+</body>
+</html>
