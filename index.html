@@ -9,14 +9,13 @@
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --bg: #f4f1ff;
+    --bg: #fff0f7;
     --card: #ffffff;
-    --ink: #1d1a3d;
-    --muted: #6b6891;
-    --line: #e3def7;
-    --accent: #5b3df5;
-    --accent-dark: #4325d6;
-    --error: #d6264f;
+    --ink: #3b1245;
+    --muted: #8a5f94;
+    --line: #f6d3e8;
+    --accent: #d62f8f;
+    --accent-dark: #b01f75;
 
     --c1: #38bdf8;
     --c2: #22c55e;
@@ -32,23 +31,23 @@
   :root:not([data-theme="light"]) {}
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #14112e;
-      --card: #1f1b45;
-      --ink: #f1eeff;
-      --muted: #a8a3d6;
-      --line: #342f66;
-      --accent: #8f7bff;
-      --accent-dark: #a594ff;
+        --bg: #26102e;
+        --card: #371645;
+        --ink: #fdeefa;
+        --muted: #d3a7d9;
+        --line: #572a68;
+        --accent: #f06bb8;
+        --accent-dark: #ff8ccc;
     }
   }
   :root[data-theme="dark"] {
-    --bg: #14112e;
-    --card: #1f1b45;
-    --ink: #f1eeff;
-    --muted: #a8a3d6;
-    --line: #342f66;
-    --accent: #8f7bff;
-    --accent-dark: #a594ff;
+      --bg: #26102e;
+      --card: #371645;
+      --ink: #fdeefa;
+      --muted: #d3a7d9;
+      --line: #572a68;
+      --accent: #f06bb8;
+      --accent-dark: #ff8ccc;
   }
 
   *, *::before, *::after { box-sizing: border-box; }
@@ -85,7 +84,7 @@
     padding: 36px 32px 32px;
     position: relative;
     overflow: hidden;
-    box-shadow: 0 20px 50px -25px rgba(67, 37, 214, .35);
+    box-shadow: 0 20px 50px -25px rgba(214, 47, 143, .35);
   }
 
   /* barra de progresso das etapas */
@@ -167,7 +166,7 @@
   .primary:active { transform: scale(.98); }
   .ghost { background: transparent; color: var(--muted); border: 2px solid var(--line); }
   .ghost:hover { color: var(--ink); border-color: var(--muted); }
-  :root[data-theme="dark"] .primary, :root:not([data-theme="light"]) .primary { color: #14112e; }
+  :root[data-theme="dark"] .primary, :root:not([data-theme="light"]) .primary { color: #26102e; }
   @media (prefers-color-scheme: light) { :root:not([data-theme="dark"]) .primary { color: #fff; } }
 
   /* ---------- resultado ---------- */
